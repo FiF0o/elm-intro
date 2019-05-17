@@ -1,5 +1,5 @@
 build:
-	elm make src/Main.elm --optimize --output=./index.js
+	elm make src/Main.elm --optimize --output=./public/index.js
 
 dev:
-	elm reactor
+	cd backend && npm run dev
