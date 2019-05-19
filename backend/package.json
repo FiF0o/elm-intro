@@ -4,9 +4,10 @@
   "description": "My Moleculer microservices project",
   "scripts": {
     "dev": "moleculer-runner --repl --hot services",
-    "start": "moleculer-runner",
+    "start": "moleculer-runner --silent --envfile .production.env services",
     "cli": "moleculer connect TCP",
-    "lint": "eslint services"
+    "lint": "eslint services",
+    "service:greeter": "node ./broker.js"
   },
   "keywords": [
     "microservices",
