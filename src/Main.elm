@@ -29,18 +29,14 @@ type alias Article =
     }
 
 
-type alias Msg =
-    { description : String
-    , data : String
-    }
+type Msg
+    = ClickedTag String
 
 
 update msg model =
-    if msg.description == "ClickedTag" then
-        { model | selectedTag = msg.data }
-
-    else
-        model
+    case msg of
+        ClickedTag tag ->
+            ( { model | selectedTag = tag }, Cmd.none )
 
 
 viewTags selectedTag tags =
@@ -60,7 +56,7 @@ renderTag selectedTag tagName =
             else
                 "tag-default"
     in
-    button [ class ("tag-pill " ++ otherCssClass), onClick { description = "ClickedTag", data = tagName } ] [ text tagName ]
+    button [ class ("tag-pill " ++ otherCssClass), onClick (ClickedTag tagName) ] [ text tagName ]
 
 
 renderBanner =
@@ -104,10 +100,21 @@ view model =
         ]
 
 
+subscriptions : Model -> Sub Msg
+subscriptions model =
+    Sub.none
+
+
+init : () -> ( Model, Cmd Msg )
+init _ =
+    ( initialModel, Cmd.none )
+
+
 main : Program () Model Msg
 main =
-    Browser.sandbox
-        { init = initialModel
-        , view = view
+    Browser.element
+        { init = init
         , update = update
+        , subscriptions = subscriptions
+        , view = view
         }
