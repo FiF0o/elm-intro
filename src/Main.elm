@@ -1,18 +1,11 @@
 module Main exposing (main)
 
-import Article as Articles exposing (..)
+import Article as Articles
 import Browser
 import Html exposing (..)
 import Html.Attributes exposing (..)
 import Html.Events exposing (onClick)
 import List exposing (filter, map, member)
-
-
-type alias Model =
-    { tags : List String
-    , selectedTag : String
-    , articlesFeed : List Article
-    }
 
 
 initialModel =
@@ -22,11 +15,8 @@ initialModel =
     }
 
 
-type alias Article =
-    { title : String
-    , description : String
-    , tags : List String
-    }
+type alias Model =
+    Articles.Model
 
 
 type Msg

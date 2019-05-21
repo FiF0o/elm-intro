@@ -1,4 +1,18 @@
-module Article exposing (feed, tags)
+module Article exposing (Model, feed, tags)
+
+
+type alias Model =
+    { tags : List String
+    , selectedTag : String
+    , articlesFeed : List Article
+    }
+
+
+type alias Article =
+    { title : String
+    , description : String
+    , tags : List String
+    }
 
 
 tags =
