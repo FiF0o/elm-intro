@@ -23,12 +23,14 @@ type Msg
     = ClickedTag String
 
 
+update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
         ClickedTag tag ->
             ( { model | selectedTag = tag }, Cmd.none )
 
 
+viewTags : String -> List String -> Html Msg
 viewTags selectedTag tags =
     let
         renderedTags =
@@ -37,6 +39,7 @@ viewTags selectedTag tags =
     div [ class "tag-list" ] renderedTags
 
 
+renderTag : String -> String -> Html Msg
 renderTag selectedTag tagName =
     let
         otherCssClass =
@@ -49,6 +52,7 @@ renderTag selectedTag tagName =
     button [ class ("tag-pill " ++ otherCssClass), onClick (ClickedTag tagName) ] [ text tagName ]
 
 
+renderBanner : Html Msg
 renderBanner =
     div [ class "banner" ]
         [ div [ class "container" ]
@@ -58,6 +62,7 @@ renderBanner =
         ]
 
 
+renderArticle : Articles.Article -> Html Msg
 renderArticle article =
     div [ class "article-preview" ]
         [ h1 [] [ text article.title ]
@@ -66,6 +71,7 @@ renderArticle article =
         ]
 
 
+view : Model -> Html Msg
 view model =
     let
         articles =

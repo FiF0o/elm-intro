@@ -1,4 +1,4 @@
-module Article exposing (Model, feed, tags)
+module Article exposing (Article, Model, feed, tags)
 
 
 type alias Model =
