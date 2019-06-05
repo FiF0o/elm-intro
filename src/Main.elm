@@ -1,116 +1,131 @@
-module Main exposing (main)
+module Main exposing (Model, Msg(..), Page(..), init, initialPage, main, setRouteWithModel, update, updatePage, view)
 
-import Article as Articles
 import Browser
+import Browser.Navigation as Nav
 import Html exposing (..)
 import Html.Attributes exposing (..)
-import Html.Events exposing (onClick)
-import List exposing (filter, map, member)
+import Json.Decode as Decode exposing (Value)
+import Layout exposing (ActivePage)
+import Page.Article as Article
+import Page.Register as Register
+import Route exposing (..)
+import Url exposing (Url)
 
 
-initialModel =
-    { tags = Articles.tags
-    , selectedTag = "elm"
-    , articlesFeed = Articles.feed
-    }
+type Page
+    = Article Article.Model
+    | Register Register.Model
 
 
 type alias Model =
-    Articles.Model
+    { page : Page
+    , key : Nav.Key
+    , url : Url.Url
+    }
 
 
 type Msg
-    = ClickedTag String
+    = SetRouteMsg (Maybe Route)
+    | ArticleMsg Article.Msg
+    | RegisterMsg Register.Msg
+    | ChangeUrl Url
+    | ClickedLink Browser.UrlRequest
 
 
-update : Msg -> Model -> ( Model, Cmd Msg )
+setRouteWithModel : Maybe Route -> Model -> ( Model, Cmd Msg )
+setRouteWithModel maybeRoute model =
+    case maybeRoute of
+        Nothing ->
+            ( model, Cmd.none )
+
+        Just Route.Article ->
+            ( { model | page = Article Article.init }, Cmd.none )
+
+        Just Route.Register ->
+            ( { model | page = Register Register.init }, Cmd.none )
+
+
+updatePage : Page -> Msg -> Model -> ( Model, Cmd Msg )
+updatePage page msg model =
+    let
+        toPage toModel toMsg subUpdate subMsg subModel =
+            let
+                ( newModel, newCmd ) =
+                    subUpdate subMsg subModel
+            in
+            ( { model | page = toModel newModel }, Cmd.map toMsg newCmd )
+    in
+    case ( msg, page ) of
+        ( SetRouteMsg maybeRoute, _ ) ->
+            setRouteWithModel maybeRoute model
+
+        ( ArticleMsg subMsg, Article subModel ) ->
+            toPage Article ArticleMsg Article.update subMsg subModel
+
+        ( RegisterMsg subMsg, Register subModel ) ->
+            toPage Register RegisterMsg Register.update subMsg subModel
+
+        ( _, _ ) ->
+            -- model => Cmd.none
+            ( model, Cmd.none )
+
+
+update : Msg -> Model -> ( Model, Cmd msg )
 update msg model =
-    case msg of
-        ClickedTag tag ->
-            ( { model | selectedTag = tag }, Cmd.none )
+    case ( msg, model ) of
+        ( ClickedLink urlRequest, _ ) ->
+            case urlRequest of
+                Browser.Internal url ->
+                    case url.fragment of
+                        Nothing ->
+                            ( model, Cmd.none )
+
+                        Just _ ->
+                            ( model
+                            , Nav.pushUrl model.key (Url.toString url)
+                            )
 
 
-viewTags : String -> List String -> Html Msg
-viewTags selectedTag tags =
-    let
-        renderedTags =
-            map (renderTag selectedTag) tags
-    in
-    div [ class "tag-list" ] renderedTags
-
-
-renderTag : String -> String -> Html Msg
-renderTag selectedTag tagName =
-    let
-        otherCssClass =
-            if tagName == selectedTag then
-                "tag-selected"
-
-            else
-                "tag-default"
-    in
-    button [ class ("tag-pill " ++ otherCssClass), onClick (ClickedTag tagName) ] [ text tagName ]
-
-
-renderBanner : Html Msg
-renderBanner =
-    div [ class "banner" ]
-        [ div [ class "container" ]
-            [ h1 [ class "logo-font" ] [ text "Conduit" ]
-            , p [] [ text "A place to share your knowledge" ]
-            ]
-        ]
-
-
-renderArticle : Articles.Article -> Html Msg
-renderArticle article =
-    div [ class "article-preview" ]
-        [ h1 [] [ text article.title ]
-        , p [] [ text article.description ]
-        , span [] [ text "Read more..." ]
-        ]
-
-
-view : Model -> Html Msg
+view : Model -> Browser.Document Msg
 view model =
     let
-        articles =
-            filter (\a -> member model.selectedTag a.tags) model.articlesFeed
-
-        articleFeed =
-            map renderArticle articles
+        renderLayout =
+            Layout.renderView
     in
-    div [ class "home-page" ]
-        [ div [] [ renderBanner ]
-        , div [ class "container page" ]
-            [ div [ class "row" ]
-                [ div [ class "col-md-9" ] articleFeed
-                , div [ class "col-md-3" ]
-                    [ div [ class "sidebar" ]
-                        [ p [] [ text "Popular Tags" ]
-                        , viewTags model.selectedTag model.tags
-                        ]
-                    ]
-                ]
-            ]
-        ]
+    case model.page of
+        Article subModel ->
+            Article.view subModel
+                |> renderLayout Layout.Article
+                |> Html.map ArticleMsg
+
+        Register subModel ->
+            Register.view subModel
+                |> renderLayout Layout.Register
+                |> Html.map RegisterMsg
+
+
+initialPage : Page
+initialPage =
+    Article Article.init
+
+
+init : Url -> Nav.Key -> ( Model, Cmd Msg )
+init url location =
+    setRouteWithModel (Route.fromUrl location) (Model initialPage url location)
+
+
+main : Program Url Model Msg
+main =
+    Browser.application
+        { init = init
+        , view = view
+        , update = update
+        , subscriptions = subscriptions
+        , onUrlChange = ChangeUrl
+        , onUrlRequest = ClickedLink
+        }
 
 
 subscriptions : Model -> Sub Msg
-subscriptions model =
+subscriptions _ =
     Sub.none
-
-
-init : () -> ( Model, Cmd Msg )
-init _ =
-    ( initialModel, Cmd.none )
-
-
-main : Program () Model Msg
-main =
-    Browser.element
-        { init = init
-        , update = update
-        , subscriptions = subscriptions
-        , view = view
-        }
